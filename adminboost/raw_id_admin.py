@@ -115,6 +115,3 @@ class ImprovedRawIdStackedMixin(BaseImprovedRawIdAdmin):
             name='inline_%s_render_edit_links' %\
                  self.model._meta.object_name.lower(),
             )
-
-ImprovedRawIdAdmin = admin_improvement_factory(admin.ModelAdmin)
-ImprovedRawIdStackedInline = admin_improvement_factory(admin.StackedInline)
