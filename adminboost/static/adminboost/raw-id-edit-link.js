@@ -40,6 +40,8 @@ function dismissEditPopup(win, newId, newRepr){
 	dismissRelatedLookupPopup(win, newId, newRepr);
 }
 
+// This removes the entire FeinCMS region instead of updating the thumbnail.
+// Commenting out until MCA:#353 is resolved
 //(function($){
 //	var yum = true;
 //    $(document).ready(function(){
