@@ -19,6 +19,7 @@ def _template_list(obj, template_name):
         'adminboost/%s' % template_name,
         )
 
+
 def render_edit_link(obj, db_field, popup=True, request=None):
     """
 
@@ -38,7 +39,7 @@ def render_edit_link(obj, db_field, popup=True, request=None):
     # (TODO: Use actual id prefix if custom -- pass form in via widget init)
     return render_to_string(
         _template_list(obj, '_edit_popup_link.html'),
-        {
+            {
             'change_url': change_url,
             'input_id': input_id,
             'object_string': escape(smart_unicode(obj)),
@@ -58,8 +59,8 @@ def render_edit_links(model, links, db_field):
         try:
             # Check if perchance we're dealing with an inline
             reload_url = reverse(
-                'inline_%s_render_edit_links' % \
-                    model._meta.object_name.lower(),
+                'inline_%s_render_edit_links' %\
+                model._meta.object_name.lower(),
                 kwargs={'field_name': db_field.name}
             )
         except NoReverseMatch:
@@ -71,6 +72,7 @@ def render_edit_links(model, links, db_field):
             'reload_url': reload_url,
             })
 
+
 class AlwaysRenderLabel(object):
     def render(self, name, value, attrs=None):
         output = super(AlwaysRenderLabel, self).render(
@@ -80,6 +82,7 @@ class AlwaysRenderLabel(object):
                 u''.join(
                     [output, self.label_for_value(None)]))
         return output
+
 
 class VerboseForeignKeyRawIdWidget(AlwaysRenderLabel, ForeignKeyRawIdWidget):
     class Media:
@@ -129,17 +132,23 @@ class PreviewImageWidget(AdminFileWidget):
     A widget to render image fields with a preview thumbnail in the admin. See
     documentation of .fields.PreviewImageField for more details.
     """
-    
+
     def __init__(self, *args, **kwargs):
         self.preview_size = kwargs.pop('preview_size', ADMINBOOST_PREVIEW_SIZE)
         super(PreviewImageWidget, self).__init__(*args, **kwargs)
-    
+
     def render(self, name, value, *args, **kwargs):
         super_output = super(PreviewImageWidget, self).render(
             name, value, *args, **kwargs)
-        return render_to_string('adminboost/_preview_image.html',
-            {
-                'super_output': super_output,
-                'image': value,
-                'preview_size': '%sx%s' % self.preview_size,
-             })
+        try:
+            return render_to_string('adminboost/_preview_image.html',
+                    {
+                    'super_output': super_output,
+                    'image': value,
+                    'preview_size': '%sx%s' % self.preview_size,
+                    })
+        except ValueError:
+            # If the submitted form is invalid, ``value`` is ``InMemoryUploadedFile``,
+            # rather then expected ``FieldFile``, which causes ``easy_thumbnails``
+            # to crash. Return ``super_output`` in that case.
+            return super_output
