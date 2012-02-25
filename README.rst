@@ -28,10 +28,17 @@ Assumptions:
     The object's Model is registered with Django's Admin.
     A user is logged-in and has permission to edit the object.
 
+Arguments:
+    object: first argument, the object which you wish to link to
+    label: optional second argument, text to display in a span element prepended to the edit icon
+
+
 Usage example:
     {% load adminboost_tags %}
     
     {% edit_link object %}
+
+    {% edit_link object 'Edit this object' %}
 
 Image preview
 -------------

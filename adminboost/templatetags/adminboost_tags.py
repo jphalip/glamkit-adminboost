@@ -51,7 +51,7 @@ def sortable_inlines(parser, token):
     return SortableInlineNode(bits)
 
 @register.simple_tag(takes_context=True)
-def edit_link(context, object):
+def edit_link(context, object, label=None):
     """
         Syntax:
 
@@ -72,6 +72,10 @@ def edit_link(context, object):
             'admin:{0}_{1}_change'.format(app_label, class_name),
             args=[object.pk]
         )
-        return '<a class="admin-edit-link" href="{0}"><img src="{1}admin/img/icon_changelink.gif" title="Edit" alt="Edit"/></a>'.format(url, static_url)
+        if label:
+            label = '<span class="admin-edit-label">{0}</span>'.format(label)
+        else:
+            label = ''
+        return '<a class="admin-edit-link" href="{0}">{2}<img src="{1}admin/img/icon_changelink.gif" title="Edit" alt="Edit"/></a>'.format(url, static_url, label)
     else:
         return ''
