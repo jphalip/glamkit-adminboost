@@ -1,3 +1,4 @@
+import django
 from django.conf.urls.defaults import patterns, url
 from django.contrib import admin
 from django.core.urlresolvers import clear_url_caches
@@ -15,12 +16,15 @@ class BaseImprovedRawIdAdmin(object):
         if db_field.name in self.raw_id_fields:
             kwargs.pop("request", None)
             type = db_field.rel.__class__.__name__
+            # Starting with Django 1.4, admin relationship widgets require
+            # the admin site as an argument
+            args = [] if django.get_version() < '1.4' else [admin.site]
             if type == "ManyToOneRel":
                 kwargs['widget'] = \
-                    VerboseForeignKeyRawIdWidget(db_field)
+                    VerboseForeignKeyRawIdWidget(db_field, *args)
             elif type == "ManyToManyRel":
                 kwargs['widget'] = \
-                    VerboseManyToManyRawIdWidget(db_field)
+                    VerboseManyToManyRawIdWidget(db_field, *args)
             return db_field.formfield(**kwargs)
         return super(
             BaseImprovedRawIdAdmin, self).formfield_for_dbfield(db_field, **kwargs)

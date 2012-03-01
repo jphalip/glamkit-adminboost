@@ -88,8 +88,9 @@ class VerboseForeignKeyRawIdWidget(AlwaysRenderLabel, ForeignKeyRawIdWidget):
     class Media:
         js = ('adminboost/raw-id-edit-link.js',)
 
-    def __init__(self, db_field):
-        super(VerboseForeignKeyRawIdWidget, self).__init__(db_field.rel, admin.site)
+    def __init__(self, db_field, *args, **kwargs):
+        super(VerboseForeignKeyRawIdWidget, self).__init__(
+            db_field.rel, *args, **kwargs)
         self.db_field = db_field
 
     def label_for_value(self, value):
@@ -107,9 +108,9 @@ class VerboseForeignKeyRawIdWidget(AlwaysRenderLabel, ForeignKeyRawIdWidget):
 
 
 class VerboseManyToManyRawIdWidget(AlwaysRenderLabel, ManyToManyRawIdWidget):
-    def __init__(self, db_field):
+    def __init__(self, db_field, *args, **kwargs):
         super(VerboseManyToManyRawIdWidget, self).__init__(
-            db_field.rel, admin.site)
+            db_field.rel, *args, **kwargs)
         self.db_field = db_field
 
     def label_for_value(self, value):
