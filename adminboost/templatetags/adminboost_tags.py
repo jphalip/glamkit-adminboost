@@ -59,7 +59,10 @@ def edit_link(context, object, label=None):
 
         Renders a clickable image which links to the admin corresponding to :obj.
     """
-    perms = context['perms']
+    try:
+        perms = context['perms']
+    except KeyError:
+        return ''
     app_label = object._meta.app_label
     class_name = object.__class__.__name__.lower()
 
