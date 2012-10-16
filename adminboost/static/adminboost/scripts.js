@@ -63,7 +63,7 @@ function init_sortable_inlines(inlines) {
                                 return; // If it doesn't have an id then it probably is a row that purely contains an error message. So just skip it.
                             }
                             
-                            $row.find("." + order_field).remove();
+                            $row.find(".field-" + order_field).remove();
                             var row_num = $row.find("input:first").attr("name").match(/[0-9]+/);
                             if ($row.hasClass("empty-form")){
                                 return true; // continue
@@ -94,7 +94,7 @@ function init_sortable_inlines(inlines) {
                     $group.inline_type = "tabular";
                     
                     // Hide table header
-                    var field_index = $group.find('.empty-form td.' + order_field).index()
+                    var field_index = $group.find('.empty-form td.field-' + order_field).index()
                     $group.find("th").eq(field_index - 1).remove();
                     
                     $group.find("th[colspan=2]").removeAttr("colspan");
@@ -121,7 +121,7 @@ function init_sortable_inlines(inlines) {
                 else {
                     $group.inline_type = "stacked";
                     
-                    $group.find(".form-row." + order_field).remove();
+                    $group.find(".form-row.field-" + order_field).remove();
     
                     $group.children(".inline-related").each(function(){
                         if ($(this).attr('id')) {

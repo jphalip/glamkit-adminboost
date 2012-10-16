@@ -32,7 +32,7 @@ def sortable_inlines(parser, token):
         
         {% sortable_inlines "<prefix1>(<order_field1>)" "<prefix2>(<order_field2>)" "prefix3" ... %}
         
-        `prefix` is the form fielf prefix for the inline. This can be found in the `id` of the inline DIV with the `inline-group` class (e.g. <div class="inline-group" id="<prefix>-group">).
+        `prefix` is the form field prefix for the inline. This can be found in the `id` of the inline DIV with the `inline-group` class (e.g. <div class="inline-group" id="<prefix>-group">).
         `order_field` is the field in the inline model used for ordering (typically an IntegerField).
         
         e.g.:
