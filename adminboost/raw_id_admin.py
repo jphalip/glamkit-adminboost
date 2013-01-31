@@ -1,5 +1,12 @@
 import django
-from django.conf.urls.defaults import patterns, url
+
+try:
+    # Prevent deprecation warnings on Django >= 1.4
+    from django.conf.urls import patterns, url
+except ImportError:
+    # For compatibility with Django <= 1.3
+    from django.conf.urls.defaults import patterns, url
+
 from django.contrib import admin
 from django.core.urlresolvers import clear_url_caches
 from django.db.models.fields import FieldDoesNotExist
