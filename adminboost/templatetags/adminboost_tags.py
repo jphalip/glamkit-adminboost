@@ -79,6 +79,13 @@ def edit_link(context, object, label=None):
             label = '<span class="admin-edit-label">{0}</span>'.format(label)
         else:
             label = ''
-        return '<a class="admin-edit-link" href="{0}">{2}<img src="{1}admin/img/icon_changelink.gif" title="Edit" alt="Edit"/></a>'.format(url, static_url, label)
+        return loader.render_to_string(
+            "adminboost/_edit_link.html",
+            {
+                'url': url,
+                'static_url': static_url,
+                'label': label,
+            }
+        )
     else:
         return ''
