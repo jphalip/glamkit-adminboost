@@ -70,7 +70,6 @@ def edit_link(context, object, label=None):
     # render the edit icon.
     if perms.user.has_perm('{0}.change_{1}'.format(app_label, class_name))\
     or perms.user.has_perm('{0}.change_{1}'.format(app_label, class_name), object):
-        static_url = context['STATIC_URL']
         url = reverse(
             'admin:{0}_{1}_change'.format(app_label, class_name),
             args=[object.pk]
@@ -83,7 +82,7 @@ def edit_link(context, object, label=None):
             "adminboost/_edit_link.html",
             {
                 'url': url,
-                'static_url': static_url,
+                'static_url': settings.STATIC_URL,
                 'label': label,
             }
         )
