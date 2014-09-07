@@ -1,13 +1,80 @@
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
 from django.contrib.admin.options import InlineModelAdmin
 from django.conf import settings
-from django.core.files.storage import default_storage
 from django.utils.encoding import force_unicode
 
-from easy_thumbnails.files import get_thumbnailer, Thumbnailer
-from easy_thumbnails.exceptions import InvalidImageFormatError
+
+from adminboost.utils import import_from_string
+
+
+# Engines --------------------------------------------------------------------
+
+
+class ThumbnailEngine():
+
+    def get_image_template(self):
+        raise NotImplementedError
+
+    def get_thumbnail_url(self, image, options):
+        raise NotImplementedError
+
+
+class DummyEngine(ThumbnailEngine):
+
+    def get_thumbnail_url(self, image, options):
+        raise ImproperlyConfigured(
+            'You need to install either easy_thumbnails or sorl-thumbnail for '
+            'the adminboost preview functionality to work.')
+
+
+class EasyThumbnailEngine(ThumbnailEngine):
+
+    def get_image_template(self):
+        return 'adminboost/_easythumbnails_preview_image.html'
+
+    def get_thumbnail_url(self, image, options):
+        from easy_thumbnails.files import get_thumbnailer
+        thumbnail = get_thumbnailer(image).get_thumbnail(options)
+        return thumbnail.url
+
+
+class SorlThumbnailEngine(ThumbnailEngine):
+
+    def get_image_template(self):
+        return 'adminboost/_sorlthumbnail_preview_image.html'
+
+    def get_thumbnail_url(self, image, options):
+        from sorl.thumbnail import get_thumbnail
+        thumbnail = get_thumbnail(image.file, '%sx%s' % options['size'], crop=options['crop'])
+        return thumbnail.url
+
+
+if hasattr(settings, 'ADMINBOOST_PREVIEW_ENGINE'):
+    preview_engine = import_from_string(settings.ADMINBOOST_PREVIEW_ENGINE)()
+else:
+    try:
+        import easy_thumbnails
+        easy_thumbnails_available = True
+    except ImportError:
+        easy_thumbnails_available = False
+
+    try:
+        from sorl import thumbnail
+        sorl_thumbnail_available = True
+    except ImportError:
+        sorl_thumbnail_available = False
+
+    if easy_thumbnails_available:
+        # Default for legacy reasons (easy_thumbnails used to be the only available engine)
+        preview_engine = EasyThumbnailEngine()
+    elif sorl_thumbnail_available:
+        preview_engine = SorlThumbnailEngine()
+    else:
+        preview_engine = DummyEngine()
+
 
 # Admin classes ------------------------------------------------------------
 
@@ -33,47 +100,44 @@ class PreviewInline(InlineModelAdmin):
         )
         return [(None, {'fields': fields})]
 
+
 class PreviewStackedInline(PreviewInline):
     template = 'admin/edit_inline/stacked.html'
+
 
 class PreviewTabularInline(PreviewInline):
     template = 'admin/edit_inline/tabular.html'
 
+
 # Form classes ------------------------------------------------------------
-    
+
+
 class PreviewWidget(forms.widgets.Input):
     is_hidden = False
     input_type = 'text'
-    
+
     def __init__(self, *args, **kwargs):
         self.instance = kwargs.pop('instance', None)
         self.form = kwargs.pop('form', None)
         super(PreviewWidget, self).__init__(*args, **kwargs)
 
+
 class ImagePreviewWidget(PreviewWidget):
+
     def render(self, name, data, attrs=None):
-        if attrs is None:
-            attrs = {}
 
         if not self.form.preview_instance_required or self.instance is not None:
             images = self.form.get_images(self.instance)
             options = dict(size=(120, 120), crop=False)
             html = u'<div class="adminboost-preview">'
             for image in images:
-                try:
-                    thumbnail = get_thumbnailer(image.file).get_thumbnail(options)
-                except InvalidImageFormatError:
-                    continue
-                if isinstance(image.file, Thumbnailer):
-                    image_url = default_storage.url(force_unicode(image.file.name))
-                else:
-                    image_url = image.file.url
+                thumbnail_url = preview_engine.get_thumbnail_url(image, options)
                 html += (
                     u'<div class="adminboost-preview-thumbnail">'
                     u'<a href="%(image_url)s" target="_blank">'
                     u'<img src="%(thumbnail_url)s"/></a></div>' % {
-                        'image_url': image_url,
-                        'thumbnail_url': thumbnail.url
+                        'image_url': image.url,
+                        'thumbnail_url': thumbnail_url
                     }
                 )
             help_text = self.form.get_preview_help_text(self.instance)
@@ -83,7 +147,8 @@ class ImagePreviewWidget(PreviewWidget):
             return mark_safe(unicode(html))
         else:
             return u''
-        
+
+
 class PreviewField(forms.Field):
     """ Dummy "field" to provide preview thumbnail. """
     def __init__(self, *args, **kwargs):
@@ -93,12 +158,13 @@ class PreviewField(forms.Field):
             instance=self.instance, form=self.form)
         super(PreviewField, self).__init__(*args, **kwargs)
 
+
 class PreviewInlineForm(forms.ModelForm):
     # If True, the widget will only be displayed if an
     # instance of the model exists (i.e. the object
     # has already been saved at least once).
     preview_instance_required = True
-    
+
     def __init__(self, *args, **kwargs):
         super(PreviewInlineForm, self).__init__(*args, **kwargs)
         preview_field = PreviewField(
@@ -108,14 +174,15 @@ class PreviewInlineForm(forms.ModelForm):
         self.base_fields.insert(0, 'preview', preview_field)
 
     class Media:
-        css = { 
+        css = {
             'all': ("%sadminboost/styles.css" % settings.STATIC_URL,)
         }
-    
+
+
 class ImagePreviewInlineForm(PreviewInlineForm):
-    
+
     preview_widget_class = ImagePreviewWidget
-    
+
     def get_preview_help_text(self, instance):
         """
         Returns text that should be displayed under
