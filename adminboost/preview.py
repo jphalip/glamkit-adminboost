@@ -3,10 +3,10 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
 from django.contrib.admin.options import InlineModelAdmin
-from django.conf import settings
 from django.utils.encoding import force_unicode
+from django.conf import settings as django_settings
 
-
+from adminboost import settings as adminboost_settings
 from adminboost.utils import import_from_string
 
 
@@ -20,14 +20,6 @@ class ThumbnailEngine():
 
     def get_thumbnail_url(self, image, options):
         raise NotImplementedError
-
-
-class DummyEngine(ThumbnailEngine):
-
-    def get_thumbnail_url(self, image, options):
-        raise ImproperlyConfigured(
-            'You need to install either easy_thumbnails or sorl-thumbnail for '
-            'the adminboost preview functionality to work.')
 
 
 class EasyThumbnailEngine(ThumbnailEngine):
@@ -57,28 +49,14 @@ _preview_engine_cache = None
 def get_preview_engine():
     global _preview_engine_cache
     if _preview_engine_cache is None:
-        if hasattr(settings, 'ADMINBOOST_PREVIEW_ENGINE'):
-            _preview_engine_cache = import_from_string(settings.ADMINBOOST_PREVIEW_ENGINE)()
+        if adminboost_settings.ADMINBOOST_PREVIEW_ENGINE is not None:
+            _preview_engine_cache = import_from_string(adminboost_settings.ADMINBOOST_PREVIEW_ENGINE)()
         else:
-            try:
-                import easy_thumbnails
-                easy_thumbnails_available = True
-            except ImportError:
-                easy_thumbnails_available = False
-
-            try:
-                from sorl import thumbnail
-                sorl_thumbnail_available = True
-            except ImportError:
-                sorl_thumbnail_available = False
-
-            if easy_thumbnails_available:
-                # Default for legacy reasons (easy_thumbnails used to be the only available engine)
-                _preview_engine_cache = EasyThumbnailEngine()
-            elif sorl_thumbnail_available:
-                _preview_engine_cache = SorlThumbnailEngine()
-            else:
-                _preview_engine_cache = DummyEngine()
+            raise ImproperlyConfigured(
+                'You need to install either easy_thumbnails or sorl-thumbnail '
+                'for the adminboost preview functionality to work. You may '
+                'also provide your own custom engine via the '
+                'ADMINBOOST_PREVIEW_ENGINE setting.')
     return _preview_engine_cache
 
 
@@ -181,7 +159,7 @@ class PreviewInlineForm(forms.ModelForm):
 
     class Media:
         css = {
-            'all': ("%sadminboost/styles.css" % settings.STATIC_URL,)
+            'all': ("%sadminboost/styles.css" % django_settings.STATIC_URL,)
         }
 
 
