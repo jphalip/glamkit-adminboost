@@ -52,28 +52,34 @@ class SorlThumbnailEngine(ThumbnailEngine):
         return thumbnail.url
 
 
-if hasattr(settings, 'ADMINBOOST_PREVIEW_ENGINE'):
-    preview_engine = import_from_string(settings.ADMINBOOST_PREVIEW_ENGINE)()
-else:
-    try:
-        import easy_thumbnails
-        easy_thumbnails_available = True
-    except ImportError:
-        easy_thumbnails_available = False
+_preview_engine_cache = None
 
-    try:
-        from sorl import thumbnail
-        sorl_thumbnail_available = True
-    except ImportError:
-        sorl_thumbnail_available = False
+def get_preview_engine():
+    global _preview_engine_cache
+    if _preview_engine_cache is None:
+        if hasattr(settings, 'ADMINBOOST_PREVIEW_ENGINE'):
+            _preview_engine_cache = import_from_string(settings.ADMINBOOST_PREVIEW_ENGINE)()
+        else:
+            try:
+                import easy_thumbnails
+                easy_thumbnails_available = True
+            except ImportError:
+                easy_thumbnails_available = False
 
-    if easy_thumbnails_available:
-        # Default for legacy reasons (easy_thumbnails used to be the only available engine)
-        preview_engine = EasyThumbnailEngine()
-    elif sorl_thumbnail_available:
-        preview_engine = SorlThumbnailEngine()
-    else:
-        preview_engine = DummyEngine()
+            try:
+                from sorl import thumbnail
+                sorl_thumbnail_available = True
+            except ImportError:
+                sorl_thumbnail_available = False
+
+            if easy_thumbnails_available:
+                # Default for legacy reasons (easy_thumbnails used to be the only available engine)
+                _preview_engine_cache = EasyThumbnailEngine()
+            elif sorl_thumbnail_available:
+                _preview_engine_cache = SorlThumbnailEngine()
+            else:
+                _preview_engine_cache = DummyEngine()
+    return _preview_engine_cache
 
 
 # Admin classes ------------------------------------------------------------
@@ -131,7 +137,7 @@ class ImagePreviewWidget(PreviewWidget):
             options = dict(size=(120, 120), crop=False)
             html = u'<div class="adminboost-preview">'
             for image in images:
-                thumbnail_url = preview_engine.get_thumbnail_url(image, options)
+                thumbnail_url = get_preview_engine().get_thumbnail_url(image, options)
                 html += (
                     u'<div class="adminboost-preview-thumbnail">'
                     u'<a href="%(image_url)s" target="_blank">'
