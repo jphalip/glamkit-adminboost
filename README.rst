@@ -38,13 +38,14 @@ Arguments
     label (optional)
         Text to display in a span element prepended to the edit icon.
 
-Usage example::
+Usage example
+    ::
 
-    {% load adminboost_tags %}
+        {% load adminboost_tags %}
 
-    {% edit_link object %}
+        {% edit_link object %}
 
-    {% edit_link object 'Edit this object' %}
+        {% edit_link object 'Edit this object' %}
 
 
 Image preview
